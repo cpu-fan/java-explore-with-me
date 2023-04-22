@@ -33,7 +33,6 @@ public class StatsServerController {
             @RequestParam @DateTimeFormat(pattern = HitRequestDto.DATE_PATTERN) LocalDateTime end,
             @RequestParam(required = false) String uris,
             @RequestParam(defaultValue = "false") boolean unique) {
-
         return statsService.getStats(start, end, uris, unique);
     }
 }
