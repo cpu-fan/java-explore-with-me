@@ -71,9 +71,15 @@
         </dependency>
     </dependencies>
 
-<!--QueryDSL Plugin-->
     <build>
         <plugins>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!--QueryDSL-->
             <plugin>
                 <groupId>com.mysema.maven</groupId>
                 <artifactId>apt-maven-plugin</artifactId>
@@ -90,6 +96,7 @@
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
     </build>
 
