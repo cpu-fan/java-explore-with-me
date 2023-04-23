@@ -29,15 +29,17 @@ public class HitCustomRepositoryImpl implements HitCustomRepository {
         StringPath uri = hit.uri;
         StringPath ip = hit.ip;
 
-        NumberExpression<Long> count = unique ? ip.countDistinct().as("hits") : ip.count().as("hits");
+        NumberExpression<Long> count = unique ? ip.countDistinct() : ip.count();
         BooleanExpression predicate = hit.timestamp.between(start, end);
         if (!uris.isEmpty()) {
             predicate = predicate.and(uri.in(uris));
         }
 
-        return queryFactory.select(bean(HitResponseDto.class, app, uri, count))
-                .from(hit).where(predicate)
+        return queryFactory.select(bean(HitResponseDto.class, app, uri, count.as("hits")))
+                .from(hit)
+                .where(predicate)
                 .groupBy(app, uri)
+                .orderBy(count.desc())
                 .fetch();
     }
 }
