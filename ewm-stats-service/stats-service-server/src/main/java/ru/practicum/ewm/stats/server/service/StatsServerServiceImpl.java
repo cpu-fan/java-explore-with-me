@@ -6,7 +6,9 @@ import org.springframework.stereotype.Service;
 import ru.practicum.ewm.stats.dto.HitRequestDto;
 import ru.practicum.ewm.stats.dto.HitResponseDto;
 import ru.practicum.ewm.stats.server.mapper.HitMapper;
+import ru.practicum.ewm.stats.server.model.App;
 import ru.practicum.ewm.stats.server.model.Hit;
+import ru.practicum.ewm.stats.server.repository.AppRepository;
 import ru.practicum.ewm.stats.server.repository.HitRepository;
 
 import java.time.LocalDateTime;
@@ -20,12 +22,17 @@ public class StatsServerServiceImpl implements StatsServerService {
 
     private final HitRepository hitRepository;
 
+    private final AppRepository appRepository;
+
     private final HitMapper hitMapper;
 
     @Override
     public void saveHit(HitRequestDto hitRequestDto) {
-        Hit hit = hitMapper.toHit(hitRequestDto);
+        String appName = hitRequestDto.getApp();
+        App app = appRepository.findByName(appName).orElseGet(() -> appRepository.save(new App(0, appName)));
+        Hit hit = hitMapper.toHit(hitRequestDto, app);
         hitRepository.save(hit);
+        log.info("Добавлена новая запись: {}", hitRequestDto);
     }
 
     @Override
@@ -34,6 +41,10 @@ public class StatsServerServiceImpl implements StatsServerService {
         if (uris != null) {
             uriList = List.of(uris.split(","));
         }
-        return hitRepository.findHits(start, end, uriList, unique);
+        List<HitResponseDto> hits = hitRepository.findHits(start, end, uriList, unique);
+        log.info("Запрошена статистика с параметрами start = {}, end = {}, uris = {}, unique = {}",
+                start, end, uriList, unique);
+        return hits;
     }
+
 }

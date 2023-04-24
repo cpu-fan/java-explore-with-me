@@ -25,7 +25,7 @@ public class HitCustomRepositoryImpl implements HitCustomRepository {
     public List<HitResponseDto> findHits(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         QHit hit = QHit.hit;
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
-        StringPath app = hit.app;
+        StringPath app = hit.app.name;
         StringPath uri = hit.uri;
         StringPath ip = hit.ip;
 
@@ -35,7 +35,7 @@ public class HitCustomRepositoryImpl implements HitCustomRepository {
             predicate = predicate.and(uri.in(uris));
         }
 
-        return queryFactory.select(bean(HitResponseDto.class, app, uri, count.as("hits")))
+        return queryFactory.select(bean(HitResponseDto.class, app.as("app"), uri, count.as("hits")))
                 .from(hit)
                 .where(predicate)
                 .groupBy(app, uri)

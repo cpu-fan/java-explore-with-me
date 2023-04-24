@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 @Builder
 @Getter
 @Setter
-@ToString
 @RequiredArgsConstructor
 @AllArgsConstructor
 public class Hit {
@@ -19,8 +18,9 @@ public class Hit {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(nullable = false, length = 256)
-    private String app;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "app_id")
+    private App app;
 
     @Column(nullable = false, length = 1024)
     private String uri;
