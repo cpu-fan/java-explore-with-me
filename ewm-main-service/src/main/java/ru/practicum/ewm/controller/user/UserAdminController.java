@@ -30,7 +30,6 @@ public class UserAdminController {
 
     @PostMapping
     public UserResponseDto createUser(@Valid @RequestBody UserRequestDto user) {
-        // проверить валидацию с @Valid и без нее
         return userService.createUser(user);
     }
 

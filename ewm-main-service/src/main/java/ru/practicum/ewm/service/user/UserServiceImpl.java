@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.dto.user.UserRequestDto;
 import ru.practicum.ewm.dto.user.UserResponseDto;
+import ru.practicum.ewm.errorhandler.exceptions.NotFoundException;
 import ru.practicum.ewm.mapper.user.UserMapper;
 import ru.practicum.ewm.model.user.User;
 import ru.practicum.ewm.repository.user.UserRepository;
@@ -31,7 +32,6 @@ public class UserServiceImpl implements UserService {
                 ? userRepository.findAllByIdIn(ids, page)
                 : userRepository.findAll(page).getContent();
 
-
         log.info("Запрошен список пользователей");
         return userList.stream()
                 .map(mapper::toDto)
@@ -48,6 +48,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(long id) {
+        User user = getUserById(id);
+        userRepository.deleteById(id);
+        log.info("Удален пользователь: {}", user);
+    }
 
+    private User getUserById(long id) {
+        return userRepository.findById(id).orElseThrow(() -> {
+            String message = "Пользователь id = " + id + " не найден";
+            log.error(message);
+            throw new NotFoundException(message);
+        });
     }
 }
