@@ -1,25 +1,22 @@
-package ru.practicum.ewm.model.user;
+package ru.practicum.ewm.model.category;
 
 import lombok.*;
 
 import javax.persistence.*;
 
 @Entity
-@Table(name = "users")
+@Table(name = "categories")
 @Getter
 @Setter
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class User {
+public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(unique = true, nullable = false, length = 100)
     private String name;
-
-    @Column(unique = true, nullable = false, length = 64)
-    private String email;
 }

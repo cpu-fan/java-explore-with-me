@@ -53,7 +53,7 @@ public class UserServiceImpl implements UserService {
         log.info("Удален пользователь: {}", user);
     }
 
-    private User getUserById(long id) {
+    public User getUserById(long id) {
         return userRepository.findById(id).orElseThrow(() -> {
             String message = "Пользователь id = " + id + " не найден";
             log.error(message);
