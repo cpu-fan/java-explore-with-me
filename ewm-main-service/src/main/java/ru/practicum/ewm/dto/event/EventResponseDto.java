@@ -43,6 +43,8 @@ public class EventResponseDto {
 
     private long participantLimit;
 
+    private long confirmedRequests;
+
     private boolean requestModeration;
 
     private EventState state;

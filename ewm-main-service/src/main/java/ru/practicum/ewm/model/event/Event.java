@@ -2,6 +2,7 @@ package ru.practicum.ewm.model.event;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 import ru.practicum.ewm.model.category.Category;
 import ru.practicum.ewm.model.user.User;
 
@@ -49,10 +50,14 @@ public class Event {
     private boolean paid;
 
     @Column(name = "created_date")
+    @CreationTimestamp
     private LocalDateTime createdOn;
 
     @Column(nullable = false)
     private long participantLimit;
+
+    @Column(nullable = false)
+    private long confirmedRequests;
 
     @Column(name = "is_request_moderation")
     private boolean requestModeration;
