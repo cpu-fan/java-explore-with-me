@@ -54,12 +54,11 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleHttpMessageNotReadableException(final HttpMessageNotReadableException e) {
-        String message = e.getMessage();
-        log.error("Bad request: {}", message);
+        log.error("Bad request: {}", e);
         return new ErrorResponse(
                 HttpStatus.BAD_REQUEST,
                 e.getCause().getMessage(),
-                message,
+                e.getMessage(),
                 LocalDateTime.now().format(formatter)
         );
     }
@@ -82,7 +81,7 @@ public class ErrorHandler {
         log.error("Произошла непредвиденная ошибка: ", e);
         return new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                e.getCause().getMessage(),
+                "Unexpected error",
                 e.getMessage(),
                 LocalDateTime.now().format(formatter)
         );
