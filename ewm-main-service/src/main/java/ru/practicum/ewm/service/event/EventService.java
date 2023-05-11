@@ -15,4 +15,6 @@ public interface EventService {
     Event getUserEventEntity(long userId, long eventId);
 
     Collection<EventResponseDto> getUserEvents(long userId, int from, int size);
+
+    Event getEventEntity(long eventId);
 }

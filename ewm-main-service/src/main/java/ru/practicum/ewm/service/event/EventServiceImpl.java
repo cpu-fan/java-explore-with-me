@@ -59,4 +59,10 @@ public class EventServiceImpl implements EventService {
         return eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Событие id = " + eventId + " не найдено"));
     }
+
+    @Override
+    public Event getEventEntity(long eventId) {
+        return eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Событие id = " + eventId + " не найдено"));
+    }
 }
