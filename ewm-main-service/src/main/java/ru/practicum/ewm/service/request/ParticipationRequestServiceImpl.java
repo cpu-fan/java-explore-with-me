@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.dto.request.ParticipationRequestRespDto;
 import ru.practicum.ewm.errorhandler.exceptions.ConflictException;
+import ru.practicum.ewm.errorhandler.exceptions.NotFoundException;
 import ru.practicum.ewm.mapper.request.ParticipationRequestMapper;
 import ru.practicum.ewm.model.event.Event;
 import ru.practicum.ewm.model.request.ParticipationRequest;
@@ -18,8 +19,7 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 import static ru.practicum.ewm.model.event.EventState.PUBLISHED;
-import static ru.practicum.ewm.model.request.RequestStatus.CONFIRMED;
-import static ru.practicum.ewm.model.request.RequestStatus.PENDING;
+import static ru.practicum.ewm.model.request.RequestStatus.*;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +36,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
     @Override
     public Collection<ParticipationRequestRespDto> getUserRequests(long userId) {
-        User user = userService.getUserById(userId);
+        userService.getUserById(userId);
         log.info("Запрошен список запросов на события от пользователя id = {}", userId);
         return requestRepository.findByRequesterId(userId)
                 .stream()
@@ -79,6 +79,24 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
     @Override
     public ParticipationRequestRespDto cancelRequest(long userId, long requestId) {
-        return null;
+        userService.getUserById(userId);
+
+        ParticipationRequest request = getRequestEntity(requestId);
+        if (request.getStatus().equals(CONFIRMED)) {
+            request.getEvent().setParticipantLimit(request.getEvent().getParticipantLimit() + 1);
+        }
+        request.setStatus(CANCELED);
+
+        request = requestRepository.save(request);
+        log.info("Отменен запрос requestId = {} на участие в событии eventId = {} пользователем userId = {}",
+                requestId, request.getEvent().getId(), userId);
+        return mapper.toResponse(request);
+    }
+
+    @Override
+    public ParticipationRequest getRequestEntity(long requestId) {
+        return requestRepository.findById(requestId).orElseThrow(
+                () -> new NotFoundException("Запрос id = " + requestId + " не найден")
+        );
     }
 }
