@@ -3,8 +3,10 @@ package ru.practicum.ewm.service.event;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.ewm.dto.event.EventAdminRequestDto;
 import ru.practicum.ewm.dto.event.EventRequestDto;
 import ru.practicum.ewm.dto.event.EventResponseDto;
+import ru.practicum.ewm.errorhandler.exceptions.ConflictException;
 import ru.practicum.ewm.errorhandler.exceptions.NotFoundException;
 import ru.practicum.ewm.mapper.event.EventMapper;
 import ru.practicum.ewm.model.category.Category;
@@ -15,6 +17,11 @@ import ru.practicum.ewm.service.category.CategoryService;
 import ru.practicum.ewm.service.user.UserService;
 
 import java.util.Collection;
+import java.util.Set;
+
+import static ru.practicum.ewm.model.event.EventState.*;
+import static ru.practicum.ewm.model.event.StateAction.PUBLISH_EVENT;
+import static ru.practicum.ewm.model.event.StateAction.REJECT_EVENT;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +44,7 @@ public class EventServiceImpl implements EventService {
 
         event = eventRepository.save(event);
         log.info("Добавлена новое событие: id = {}, title = {}", event.getId(), event.getTitle());
-        return mapper.toResponse(event);
+        return mapper.toDto(event);
     }
 
     @Override
@@ -51,7 +58,7 @@ public class EventServiceImpl implements EventService {
     public EventResponseDto getUserEvent(long userId, long eventId) {
         Event event = getUserEventEntity(userId, eventId);
         // TODO: тут наверно надо будет потом добавить обращение к запросам и просмотрам
-        return mapper.toResponse(event);
+        return mapper.toDto(event);
     }
 
     @Override
@@ -64,5 +71,36 @@ public class EventServiceImpl implements EventService {
     public Event getEventEntity(long eventId) {
         return eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие id = " + eventId + " не найдено"));
+    }
+
+    @Override
+    public Set<Event> getEventEntities(Collection<Long> eventIds) {
+        return eventRepository.findByIdIn(eventIds);
+    }
+
+    @Override
+    public EventResponseDto updateEventAdmin(long eventId, EventAdminRequestDto eventDto) {
+        Event event = getEventEntity(eventId);
+
+        if (!event.getState().equals(PUBLISHED)) {
+
+            if (eventDto.getStateAction() != null) {
+
+                if (eventDto.getStateAction().equals(PUBLISH_EVENT) &&
+                        event.getState().equals(PENDING)) {
+                    event.setState(PUBLISHED);
+                } else if (eventDto.getStateAction().equals(REJECT_EVENT)) {
+                    event.setState(CANCELED);
+                } else {
+                    throw new ConflictException("Текущий статус state = " + event.getState() + " не позволяет обновить событие");
+                }
+            }
+
+            event = mapper.updateAdmin(eventDto, event);
+            event = eventRepository.save(event);
+            return mapper.toDto(event);
+        }
+
+        throw new ConflictException("Текущий статус state = " + event.getState() + " не позволяет обновить событие");
     }
 }

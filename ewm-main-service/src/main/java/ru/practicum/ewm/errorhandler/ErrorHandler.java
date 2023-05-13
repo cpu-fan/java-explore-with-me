@@ -42,7 +42,7 @@ public class ErrorHandler {
                 .collect(Collectors.joining(", "));
         String message = Objects.requireNonNull(e.getBindingResult().getFieldError()).toString().split(";")[0];
 
-        log.error("Bad request: {}", message);
+        log.error("Валидация не пройдена: " + message);
         return new ErrorResponse(
                 HttpStatus.BAD_REQUEST,
                 reason,
@@ -54,10 +54,10 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleHttpMessageNotReadableException(final HttpMessageNotReadableException e) {
-        log.error("Bad request: {}", e);
+        log.error("Валидация не пройдена: " + e);
         return new ErrorResponse(
                 HttpStatus.BAD_REQUEST,
-                e.getCause().getMessage(),
+                e.getMessage(), // fixme
                 e.getMessage(),
                 LocalDateTime.now().format(formatter)
         );
@@ -66,7 +66,6 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotFoundException(final NotFoundException e) {
-        log.error("Not found: ", e);
         return new ErrorResponse(
                 HttpStatus.NOT_FOUND,
                 e.getMessage(),

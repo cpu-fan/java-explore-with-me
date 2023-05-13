@@ -40,7 +40,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         log.info("Запрошен список запросов на события от пользователя id = {}", userId);
         return requestRepository.findByRequesterId(userId)
                 .stream()
-                .map(mapper::toResponse)
+                .map(mapper::toDto)
                 .collect(Collectors.toList());
     }
     @Override
@@ -69,7 +69,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             request = requestRepository.save(request);
             log.info("Добавлен новый запрос requestId = {} на событие eventId = {} пользователем userId = {}",
                     request.getId(), eventId, userId);
-            return mapper.toResponse(request);
+            return mapper.toDto(request);
         } else {
             String message = "Создание заявки на участие в этом событии невозможно";
             log.error(message);
@@ -90,7 +90,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         request = requestRepository.save(request);
         log.info("Отменен запрос requestId = {} на участие в событии eventId = {} пользователем userId = {}",
                 requestId, request.getEvent().getId(), userId);
-        return mapper.toResponse(request);
+        return mapper.toDto(request);
     }
 
     @Override

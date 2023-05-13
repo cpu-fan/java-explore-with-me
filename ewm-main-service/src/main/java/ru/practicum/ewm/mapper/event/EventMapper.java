@@ -1,8 +1,7 @@
 package ru.practicum.ewm.mapper.event;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
+import ru.practicum.ewm.dto.event.EventAdminRequestDto;
 import ru.practicum.ewm.dto.event.EventRequestDto;
 import ru.practicum.ewm.dto.event.EventResponseDto;
 import ru.practicum.ewm.mapper.category.CategoryMapper;
@@ -17,8 +16,12 @@ public interface EventMapper {
     @Mapping(source = "category", target = "category.id")
     Event toEntity(EventRequestDto eventRequestDto);
 
-    EventResponseDto toResponse(Event event);
+    EventResponseDto toDto(Event event);
 
 //    @Mapping(target = "views", source = "views")
 //    EventResponseDto toResponseWithViews(Event event, long views);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(source = "category", target = "category.id")
+    Event updateAdmin(EventAdminRequestDto eventDto, @MappingTarget Event event);
 }
