@@ -1,9 +1,6 @@
 package ru.practicum.ewm.service.event;
 
-import ru.practicum.ewm.dto.event.EventAdminRequestDto;
-import ru.practicum.ewm.dto.event.EventRequestDto;
-import ru.practicum.ewm.dto.event.EventResponseDto;
-import ru.practicum.ewm.dto.event.EventSearchFilters;
+import ru.practicum.ewm.dto.event.*;
 import ru.practicum.ewm.model.event.Event;
 
 import java.util.Collection;
@@ -17,7 +14,7 @@ public interface EventService {
 
     Event getUserEventEntity(long userId, long eventId);
 
-    Collection<EventResponseDto> getUserEvents(long userId, int from, int size);
+    Collection<EventShortDto> getUserEvents(long userId, int from, int size);
 
     Event getEventEntity(long eventId);
 

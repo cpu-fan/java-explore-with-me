@@ -6,6 +6,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.dto.event.EventRequestDto;
 import ru.practicum.ewm.dto.event.EventResponseDto;
+import ru.practicum.ewm.dto.event.EventShortDto;
 import ru.practicum.ewm.service.event.EventService;
 
 import javax.validation.Valid;
@@ -35,9 +36,9 @@ public class EventPrivateController {
     }
 
     @GetMapping
-    public Collection<EventResponseDto> getUserEvents(@PathVariable long userId,
-                                                      @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
-                                                      @RequestParam(defaultValue = "10") @Positive Integer size) {
+    public Collection<EventShortDto> getUserEvents(@PathVariable long userId,
+                                                   @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+                                                   @RequestParam(defaultValue = "10") @Positive Integer size) {
         return eventService.getUserEvents(userId, from, size);
     }
 }

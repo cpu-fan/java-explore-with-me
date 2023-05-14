@@ -6,10 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
-import ru.practicum.ewm.dto.event.EventAdminRequestDto;
-import ru.practicum.ewm.dto.event.EventRequestDto;
-import ru.practicum.ewm.dto.event.EventResponseDto;
-import ru.practicum.ewm.dto.event.EventSearchFilters;
+import ru.practicum.ewm.dto.event.*;
 import ru.practicum.ewm.errorhandler.exceptions.ConflictException;
 import ru.practicum.ewm.errorhandler.exceptions.NotFoundException;
 import ru.practicum.ewm.mapper.event.EventMapper;
@@ -24,10 +21,7 @@ import ru.practicum.ewm.service.user.UserService;
 import ru.practicum.ewm.stats.dto.HitResponseDto;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static ru.practicum.ewm.model.event.EventState.*;
@@ -64,17 +58,22 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Collection<EventResponseDto> getUserEvents(long userId, int from, int size) {
+    public Collection<EventShortDto> getUserEvents(long userId, int from, int size) {
         userService.getUserById(userId);
-        // TODO: доделать
-        return null;
+
+        List<Event> events = eventRepository.findAllByInitiatorId(userId, PageRequest.of(from / size, size));
+        if (!events.isEmpty()) {
+            return getEventsShortDto(events);
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     @Override
     public EventResponseDto getUserEvent(long userId, long eventId) {
         Event event = getUserEventEntity(userId, eventId);
-        // TODO: тут наверно надо будет потом добавить обращение к запросам и просмотрам
-        return mapper.toDto(event);
+        log.info("Запрошено событие eventId = {}, пользователя userId = {}", event, userId);
+        return getEventsResponseDto(List.of(event)).get(0);
     }
 
     @Override
@@ -96,8 +95,8 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Collection<EventResponseDto> searchEventsAdmin(EventSearchFilters filters, int from, int size) {
-        List<Event> events = eventRepository.findAll(queryBuilder(filters), PageRequest.of(from, size)).toList();
-        return getEventResponseDto(events);
+        List<Event> events = eventRepository.findAll(queryBuilder(filters), PageRequest.of(from / size, size)).toList();
+        return getEventsResponseDto(events);
     }
 
     @Override
@@ -128,49 +127,71 @@ public class EventServiceImpl implements EventService {
 
     @NonNull
     private BooleanBuilder queryBuilder(@NonNull EventSearchFilters filters) {
-        BooleanBuilder builder = new BooleanBuilder();
+        BooleanBuilder queryBuilder = new BooleanBuilder();
 
         if (filters.getText() != null) {
-            builder.and(QEvent.event.annotation.likeIgnoreCase(filters.getText())
+            queryBuilder.and(QEvent.event.annotation.likeIgnoreCase(filters.getText())
                     .or(QEvent.event.description.likeIgnoreCase(filters.getText())));
         }
 
         if (filters.getUsers() != null && !filters.getUsers().isEmpty()) {
-            builder.and(QEvent.event.initiator.id.in(filters.getUsers()));
+            queryBuilder.and(QEvent.event.initiator.id.in(filters.getUsers()));
         }
 
         if (filters.getStates() != null && !filters.getStates().isEmpty()) {
-            builder.and(QEvent.event.state.in(filters.getStates()));
+            queryBuilder.and(QEvent.event.state.in(filters.getStates()));
         }
 
         if (filters.getCategories() != null && !filters.getCategories().isEmpty()) {
-            builder.and(QEvent.event.category.id.in(filters.getCategories()));
+            queryBuilder.and(QEvent.event.category.id.in(filters.getCategories()));
         }
 
         if (filters.getPaid() != null) {
-            builder.and(QEvent.event.paid.eq(filters.getPaid()));
+            queryBuilder.and(QEvent.event.paid.eq(filters.getPaid()));
         }
 
         if (filters.getRangeStart() != null) {
-            builder.and(QEvent.event.eventDate.after(filters.getRangeStart()));
+            queryBuilder.and(QEvent.event.eventDate.after(filters.getRangeStart()));
         }
 
         if (filters.getRangeEnd() != null) {
-            builder.and(QEvent.event.eventDate.before(filters.getRangeEnd()));
+            queryBuilder.and(QEvent.event.eventDate.before(filters.getRangeEnd()));
         }
 
         if (filters.getOnlyAvailable() != null) {
-            builder.and(QEvent.event.participantLimit.eq(0L)
+            queryBuilder.and(QEvent.event.participantLimit.eq(0L)
                     .or(QEvent.event.participantLimit.gt(QEvent.event.confirmedRequests)));
         }
 
-        return builder;
+        return queryBuilder;
     }
 
-    private List<EventResponseDto> getEventResponseDto(List<Event> eventList) {
+    private List<EventShortDto> getEventsShortDto(List<Event> eventList) {
         if (!eventList.isEmpty()) {
+
             Map<Long, Long> stats = getStatMap(eventList);
+
             if (stats != null && !stats.isEmpty()) {
+
+                return eventList.stream()
+                        .map(event -> stats.containsKey(event.getId()) ?
+                                mapper.toShortDtoWithViews(event, stats.get(event.getId())) :
+                                mapper.toShortDto(event))
+                        .collect(Collectors.toList());
+            }
+        }
+        return eventList.stream()
+                .map(mapper::toShortDto)
+                .collect(Collectors.toList());
+    }
+
+    private List<EventResponseDto> getEventsResponseDto(List<Event> eventList) {
+        if (!eventList.isEmpty()) {
+
+            Map<Long, Long> stats = getStatMap(eventList);
+
+            if (stats != null && !stats.isEmpty()) {
+
                 return eventList.stream()
                         .map(event -> stats.containsKey(event.getId()) ?
                                 mapper.toDtoWithViews(event, stats.get(event.getId())) :
@@ -178,6 +199,7 @@ public class EventServiceImpl implements EventService {
                         .collect(Collectors.toList());
             }
         }
+
         return eventList.stream()
                 .map(mapper::toDto)
                 .collect(Collectors.toList());

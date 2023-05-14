@@ -21,7 +21,7 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
 
     Optional<Event> findByIdAndInitiatorId(long eventId, long userId);
 
-    List<Event> findByInitiatorId(Long userId, PageRequest pageRequest);
+    List<Event> findAllByInitiatorId(long userId, PageRequest page);
 
     Set<Event> findByIdIn(Collection<Long> eventIds);
 
