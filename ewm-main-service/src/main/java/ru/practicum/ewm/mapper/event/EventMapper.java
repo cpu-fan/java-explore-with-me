@@ -18,8 +18,8 @@ public interface EventMapper {
 
     EventResponseDto toDto(Event event);
 
-//    @Mapping(target = "views", source = "views")
-//    EventResponseDto toResponseWithViews(Event event, long views);
+    @Mapping(source = "views", target = "views")
+    EventResponseDto toDtoWithViews(Event event, long views);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(source = "category", target = "category.id")
