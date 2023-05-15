@@ -49,6 +49,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                 .map(mapper::toDto)
                 .collect(Collectors.toList());
     }
+
     @Override
     public ParticipationRequestRespDto addRequest(long userId, long eventId) {
         Event event = eventService.getEventEntity(eventId);

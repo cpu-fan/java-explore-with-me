@@ -48,6 +48,7 @@ public class EventPrivateController {
                                                    @RequestParam(defaultValue = "10") @Positive Integer size) {
         return eventService.getUserEvents(userId, from, size);
     }
+
     @PatchMapping("/{eventId}")
     public EventResponseDto updateEvent(@PathVariable @Positive long userId,
                                         @PathVariable @Positive long eventId,
