@@ -41,6 +41,7 @@ services:
       - DB_PORT=5432
       - POSTGRES_USER=sa
       - POSTGRES_PASSWORD=password
+      - STATS_SERVICE_URL=http://stats-service:9090
 
   main-db:
     image: postgres:14-alpine
