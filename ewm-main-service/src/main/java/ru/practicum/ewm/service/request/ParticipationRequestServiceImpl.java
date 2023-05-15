@@ -4,6 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.dto.request.ParticipationRequestRespDto;
+import ru.practicum.ewm.dto.request.ParticipationRequestStatus;
+import ru.practicum.ewm.dto.request.ParticipationRequestUpdReqDto;
+import ru.practicum.ewm.dto.request.ParticipationRequestUpdRespDto;
 import ru.practicum.ewm.errorhandler.exceptions.ConflictException;
 import ru.practicum.ewm.errorhandler.exceptions.NotFoundException;
 import ru.practicum.ewm.mapper.request.ParticipationRequestMapper;
@@ -15,7 +18,9 @@ import ru.practicum.ewm.repository.request.ParticipationRequestRepository;
 import ru.practicum.ewm.service.event.EventService;
 import ru.practicum.ewm.service.user.UserService;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static ru.practicum.ewm.model.event.EventState.PUBLISHED;
@@ -94,9 +99,92 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     }
 
     @Override
+    public ParticipationRequestUpdRespDto updateRequest(long userId, long eventId, ParticipationRequestUpdReqDto requestDto) {
+        Event event = eventService.getUserEventEntity(userId, eventId);
+
+        if (event.getParticipantLimit() == event.getConfirmedRequests() && event.getParticipantLimit() != 0) {
+            throw new ConflictException("Достигнут лимит по заявкам на данное событие eventId = " + eventId);
+        }
+
+        List<ParticipationRequestRespDto> confirmed = new ArrayList<>();
+        List<ParticipationRequestRespDto> rejected = new ArrayList<>();
+
+        if (event.getParticipantLimit() == 0) {
+            setRequests(confirmed, rejected, requestsNoLimit(requestDto, event));
+        } else {
+            setRequests(confirmed, rejected, requestsWithLimit(requestDto, event));
+        }
+
+        return new ParticipationRequestUpdRespDto(confirmed, rejected);
+    }
+
+    @Override
     public ParticipationRequest getRequestEntity(long requestId) {
         return requestRepository.findById(requestId).orElseThrow(
                 () -> new NotFoundException("Запрос id = " + requestId + " не найден")
         );
+    }
+
+    private void setRequests(List<ParticipationRequestRespDto> confirmed,
+                             List<ParticipationRequestRespDto> rejected,
+                             List<ParticipationRequestRespDto> requests) {
+        requests.forEach(request -> {
+            if (request.getStatus().equals(CONFIRMED)) {
+                confirmed.add(request);
+            } else {
+                rejected.add(request);
+            }
+        });
+    }
+
+    private List<ParticipationRequestRespDto> requestsNoLimit(ParticipationRequestUpdReqDto requestDto,
+                                                              Event event) {
+        return requestRepository.findByIdIn(requestDto.getRequestIds())
+                .stream()
+                .peek(request -> {
+                    if (request.getStatus().equals(PENDING)) {
+
+                        if (requestDto.getStatus().equals(ParticipationRequestStatus.CONFIRMED)) {
+                            request.setStatus(CONFIRMED);
+                            event.setConfirmedRequests(event.getConfirmedRequests() + 1);
+                        } else {
+                            request.setStatus(REJECTED);
+                        }
+
+                    } else {
+                        throw new ConflictException("Статус можно изменить только у заявок, находящихся в состоянии ожидания");
+                    }
+                })
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    private List<ParticipationRequestRespDto> requestsWithLimit(ParticipationRequestUpdReqDto statusUpdateRequest,
+                                                                Event event) {
+        return requestRepository.findByIdIn(statusUpdateRequest.getRequestIds())
+                .stream()
+                .peek(request -> {
+                    if (request.getStatus().equals(PENDING)) {
+
+                        if (statusUpdateRequest.getStatus().equals(ParticipationRequestStatus.CONFIRMED)) {
+                            long limit = event.getParticipantLimit() - event.getConfirmedRequests();
+
+                            if (limit > 0) {
+                                request.setStatus(CONFIRMED);
+                                event.setConfirmedRequests(event.getConfirmedRequests() + 1);
+                            } else {
+                                request.setStatus(REJECTED);
+                            }
+
+                        } else {
+                            request.setStatus(REJECTED);
+                        }
+
+                    } else {
+                        throw new ConflictException("Статус можно изменить только у заявок, находящихся в состоянии ожидания");
+                    }
+                })
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
     }
 }

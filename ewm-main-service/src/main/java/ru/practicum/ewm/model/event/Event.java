@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import ru.practicum.ewm.model.category.Category;
 import ru.practicum.ewm.model.compilation.Compilation;
+import ru.practicum.ewm.model.request.ParticipationRequest;
 import ru.practicum.ewm.model.user.User;
 
 import javax.persistence.*;
@@ -73,4 +74,7 @@ public class Event {
 
     @ManyToMany(mappedBy = "events")
     private Set<Compilation> compilations;
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
+    private Set<ParticipationRequest> requests;
 }

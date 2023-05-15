@@ -1,18 +1,19 @@
 package ru.practicum.ewm.dto.event;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import ru.practicum.ewm.model.event.StateActionAdmin;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.ToString;
+import lombok.extern.jackson.Jacksonized;
+import ru.practicum.ewm.model.event.StateActionUser;
 
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class EventAdminRequestDto {
+@Builder
+@Getter
+@ToString
+@Jacksonized
+public class EventUpdateDto {
 
     @Size(min = 3, max = 120)
     private String title;
@@ -25,7 +26,7 @@ public class EventAdminRequestDto {
 
     private Long category;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    // valid date
     private LocalDateTime eventDate;
 
     private LocationDto location;
@@ -36,5 +37,5 @@ public class EventAdminRequestDto {
 
     private Boolean requestModeration;
 
-    private StateActionAdmin stateAction;
+    private StateActionUser stateAction;
 }

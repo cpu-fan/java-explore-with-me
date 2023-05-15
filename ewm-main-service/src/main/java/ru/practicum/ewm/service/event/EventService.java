@@ -1,6 +1,7 @@
 package ru.practicum.ewm.service.event;
 
 import ru.practicum.ewm.dto.event.*;
+import ru.practicum.ewm.dto.request.ParticipationRequestRespDto;
 import ru.practicum.ewm.model.event.Event;
 
 import java.util.Collection;
@@ -16,6 +17,8 @@ public interface EventService {
 
     Collection<EventShortDto> getUserEvents(long userId, int from, int size);
 
+    EventResponseDto updateEvent(EventUpdateDto eventDto, long userId, long eventId);
+
     Event getEventEntity(long eventId);
 
     Set<Event> getEventEntities(Collection<Long> eventIds);
@@ -24,4 +27,6 @@ public interface EventService {
     Collection<EventResponseDto> searchEventsAdmin(EventSearchFilters filters, int from, int size);
 
     EventResponseDto updateEventAdmin(long eventId, EventAdminRequestDto eventDto);
+
+    Collection<ParticipationRequestRespDto> getUserEventsRequests(long userId, long eventId);
 }

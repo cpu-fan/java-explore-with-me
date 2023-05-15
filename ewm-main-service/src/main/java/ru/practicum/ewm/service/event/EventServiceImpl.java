@@ -7,9 +7,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.dto.event.*;
+import ru.practicum.ewm.dto.request.ParticipationRequestRespDto;
 import ru.practicum.ewm.errorhandler.exceptions.ConflictException;
 import ru.practicum.ewm.errorhandler.exceptions.NotFoundException;
 import ru.practicum.ewm.mapper.event.EventMapper;
+import ru.practicum.ewm.mapper.request.ParticipationRequestMapper;
 import ru.practicum.ewm.model.category.Category;
 import ru.practicum.ewm.model.event.Event;
 import ru.practicum.ewm.model.event.QEvent;
@@ -25,8 +27,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static ru.practicum.ewm.model.event.EventState.*;
-import static ru.practicum.ewm.model.event.StateAction.PUBLISH_EVENT;
-import static ru.practicum.ewm.model.event.StateAction.REJECT_EVENT;
+import static ru.practicum.ewm.model.event.StateActionAdmin.PUBLISH_EVENT;
+import static ru.practicum.ewm.model.event.StateActionAdmin.REJECT_EVENT;
+import static ru.practicum.ewm.model.event.StateActionUser.CANCEL_REVIEW;
+import static ru.practicum.ewm.model.event.StateActionUser.SEND_TO_REVIEW;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +46,8 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
 
     private final StatsService statsService;
+
+    private final ParticipationRequestMapper participationReqMapper;
 
     @Override
     public EventResponseDto addEvent(long userId, EventRequestDto eventDto) {
@@ -74,6 +80,44 @@ public class EventServiceImpl implements EventService {
         Event event = getUserEventEntity(userId, eventId);
         log.info("Запрошено событие eventId = {}, пользователя userId = {}", event, userId);
         return getEventsResponseDto(List.of(event)).get(0);
+    }
+
+    @Override
+    public EventResponseDto updateEvent(EventUpdateDto eventDto, long userId, long eventId) {
+        Event event = getUserEventEntity(userId, eventId);
+
+        if (!event.getState().equals(PUBLISHED)) {
+            event = mapper.updateEventUser(eventDto, event);
+
+            if (eventDto.getStateAction() != null) {
+
+                if (eventDto.getStateAction().equals(SEND_TO_REVIEW)) {
+                    event.setState(PENDING);
+                }
+                if (eventDto.getStateAction().equals(CANCEL_REVIEW)) {
+                    event.setState(CANCELED);
+                }
+            }
+
+            if (eventDto.getCategory() != null) {
+                Category category = categoryService.getEntityCategory(eventDto.getCategory());
+                event.setCategory(category);
+            }
+
+            event = eventRepository.save(event);
+            log.info("Обновлена информация о событии eventId = {}", eventId);
+            return mapper.toDto(event);
+        }
+        throw new ConflictException("Текущий статус state = " + event.getState() + " не позволяет обновить событие");
+    }
+
+    @Override
+    public Collection<ParticipationRequestRespDto> getUserEventsRequests(long userId, long eventId) {
+        return eventRepository.findByIdAndInitiatorId(eventId, userId)
+                .orElseThrow(() -> new NotFoundException("Событие id = " + eventId + " не найдено"))
+                .getRequests().stream()
+                .map(participationReqMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -117,11 +161,11 @@ public class EventServiceImpl implements EventService {
                 }
             }
 
-            event = mapper.updateAdmin(eventDto, event);
+            event = mapper.updateEventAdmin(eventDto, event);
             event = eventRepository.save(event);
+            log.info("Обновлена информация о событии eventId = {}", eventId);
             return mapper.toDto(event);
         }
-
         throw new ConflictException("Текущий статус state = " + event.getState() + " не позволяет обновить событие");
     }
 
