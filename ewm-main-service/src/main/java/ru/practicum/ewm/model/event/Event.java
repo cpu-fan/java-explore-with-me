@@ -1,6 +1,7 @@
 package ru.practicum.ewm.model.event;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import ru.practicum.ewm.model.category.Category;
@@ -16,6 +17,7 @@ import java.util.Set;
 @Table(name = "events")
 @Getter
 @Setter
+@NoArgsConstructor
 public class Event {
 
     @Id

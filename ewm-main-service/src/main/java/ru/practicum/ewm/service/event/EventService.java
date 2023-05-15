@@ -9,6 +9,12 @@ import java.util.Set;
 
 public interface EventService {
 
+    // Public
+    EventResponseDto getEvent(long eventId);
+
+    Collection<EventShortDto> searchEventsPublic(EventSearchFilters filters, int from, int size);
+
+    // Private
     EventResponseDto addEvent(long userId, EventRequestDto event);
 
     EventResponseDto getUserEvent(long userId, long eventId);

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import ru.practicum.ewm.stats.client.StatsClient;
+import ru.practicum.ewm.stats.dto.HitRequestDto;
 import ru.practicum.ewm.stats.dto.HitResponseDto;
 
 import javax.servlet.http.HttpServletRequest;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class StatsServiceImpl implements StatsService {
 
-    private static final String APP = "ewm-service";
+    private static final String APP = "ewm-main-service";
     private final StatsClient statsClient;
 
     @Override
@@ -32,6 +33,14 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     public void saveHit(HttpServletRequest request) {
+        HitRequestDto hitRequestDto = HitRequestDto.builder()
+                .app(APP)
+                .uri(request.getRequestURI())
+                .ip(request.getRemoteAddr())
+                .timestamp(LocalDateTime.now())
+                .build();
 
+        statsClient.saveHit(hitRequestDto)
+                .subscribe(hit -> log.info("Отправлена информация в сервис статистики: {}", hit));
     }
 }

@@ -4,6 +4,7 @@ import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.dto.event.*;
@@ -26,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static ru.practicum.ewm.dto.event.EventSort.VIEWS;
 import static ru.practicum.ewm.model.event.EventState.*;
 import static ru.practicum.ewm.model.event.StateActionAdmin.PUBLISH_EVENT;
 import static ru.practicum.ewm.model.event.StateActionAdmin.REJECT_EVENT;
@@ -50,6 +52,36 @@ public class EventServiceImpl implements EventService {
     private final ParticipationRequestMapper participationReqMapper;
 
     @Override
+    public EventResponseDto getEvent(long eventId) {
+        Event event = getEventEntity(eventId);
+        log.info("Запрошено событие eventId = {}, title = {}", eventId, event.getTitle());
+        return getEventsResponseDto(List.of(event)).get(0);
+    }
+
+    @Override
+    public Collection<EventShortDto> searchEventsPublic(EventSearchFilters filters, int from, int size) {
+
+        if (filters.getOnlyAvailable() == null) {
+            filters.setOnlyAvailable(Boolean.FALSE);
+        }
+
+        BooleanBuilder queryBuilder = queryBuilder(filters);
+        if (filters.getRangeStart() == null && filters.getRangeEnd() == null) {
+            queryBuilder.and(QEvent.event.eventDate.after(LocalDateTime.now()));
+        }
+
+        List<Event> events = eventRepository.findAll(queryBuilder,
+                PageRequest.of(from, size, Sort.by("eventDate").ascending())).toList();
+        List<EventShortDto> eventsDto = getEventsShortDto(events);
+
+        if (filters.getSort() != null && filters.getSort().equals(VIEWS)) {
+            eventsDto.sort(EventShortDto::compareTo);
+        }
+
+        return eventsDto;
+    }
+
+    @Override
     public EventResponseDto addEvent(long userId, EventRequestDto eventDto) {
         Category category = categoryService.getEntityCategory(eventDto.getCategory());
         User user = userService.getUserById(userId);
@@ -68,6 +100,7 @@ public class EventServiceImpl implements EventService {
         userService.getUserById(userId);
 
         List<Event> events = eventRepository.findAllByInitiatorId(userId, PageRequest.of(from / size, size));
+        log.info("Запрошены события пользователя userId = {}", userId);
         if (!events.isEmpty()) {
             return getEventsShortDto(events);
         } else {
@@ -113,6 +146,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Collection<ParticipationRequestRespDto> getUserEventsRequests(long userId, long eventId) {
+        log.info("Запрошена информация о запросах на участие в событии eventId = {} пользователя userId = {}", eventId, userId);
         return eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Событие id = " + eventId + " не найдено"))
                 .getRequests().stream()
@@ -140,6 +174,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public Collection<EventResponseDto> searchEventsAdmin(EventSearchFilters filters, int from, int size) {
         List<Event> events = eventRepository.findAll(queryBuilder(filters), PageRequest.of(from / size, size)).toList();
+        log.info("Поиск событий администратором с параметрами запроса filters = {}", filters);
         return getEventsResponseDto(events);
     }
 

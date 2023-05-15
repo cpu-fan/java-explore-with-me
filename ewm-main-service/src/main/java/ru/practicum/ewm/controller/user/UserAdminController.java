@@ -1,7 +1,7 @@
 package ru.practicum.ewm.controller.user;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.dto.user.UserRequestDto;
@@ -29,13 +29,14 @@ public class UserAdminController {
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public UserResponseDto createUser(@Valid @RequestBody UserRequestDto user) {
         return userService.createUser(user);
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable long userId) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable long userId) {
         userService.deleteUser(userId);
-        return ResponseEntity.noContent().build();
     }
 }

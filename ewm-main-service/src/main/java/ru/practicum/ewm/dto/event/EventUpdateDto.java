@@ -1,10 +1,12 @@
 package ru.practicum.ewm.dto.event;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
 import ru.practicum.ewm.model.event.StateActionUser;
+import ru.practicum.ewm.validator.CustomDateTimeConstraint;
 
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
@@ -26,7 +28,8 @@ public class EventUpdateDto {
 
     private Long category;
 
-    // valid date
+    @CustomDateTimeConstraint
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 
     private LocationDto location;

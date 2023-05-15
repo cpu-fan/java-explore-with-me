@@ -3,6 +3,7 @@ package ru.practicum.ewm.service.request;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.dto.request.ParticipationRequestRespDto;
 import ru.practicum.ewm.dto.request.ParticipationRequestStatus;
 import ru.practicum.ewm.dto.request.ParticipationRequestUpdReqDto;
@@ -99,6 +100,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     }
 
     @Override
+    @Transactional
     public ParticipationRequestUpdRespDto updateRequest(long userId, long eventId, ParticipationRequestUpdReqDto requestDto) {
         Event event = eventService.getUserEventEntity(userId, eventId);
 
@@ -159,14 +161,14 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                 .collect(Collectors.toList());
     }
 
-    private List<ParticipationRequestRespDto> requestsWithLimit(ParticipationRequestUpdReqDto statusUpdateRequest,
+    private List<ParticipationRequestRespDto> requestsWithLimit(ParticipationRequestUpdReqDto requestDto,
                                                                 Event event) {
-        return requestRepository.findByIdIn(statusUpdateRequest.getRequestIds())
+        return requestRepository.findByIdIn(requestDto.getRequestIds())
                 .stream()
                 .peek(request -> {
                     if (request.getStatus().equals(PENDING)) {
 
-                        if (statusUpdateRequest.getStatus().equals(ParticipationRequestStatus.CONFIRMED)) {
+                        if (requestDto.getStatus().equals(ParticipationRequestStatus.CONFIRMED)) {
                             long limit = event.getParticipantLimit() - event.getConfirmedRequests();
 
                             if (limit > 0) {

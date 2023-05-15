@@ -81,7 +81,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private void checkExistingEventsForCategory(long categoryId) {
         if (eventRepository.existsByCategoryId(categoryId)) {
-            String message = "У категории имеются существующие события";
+            String message = "У категории categoryId = " + categoryId + " имеются существующие события";
             log.error(message);
             throw new ConflictException(message);
         }

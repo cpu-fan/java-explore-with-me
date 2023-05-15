@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
 import org.springframework.beans.factory.annotation.Value;
+import ru.practicum.ewm.validator.CustomDateTimeConstraint;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -33,6 +34,7 @@ public class EventRequestDto {
     private long category;
 
     @NotNull
+    @CustomDateTimeConstraint
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 

@@ -1,5 +1,6 @@
 package ru.practicum.ewm.dto.event;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class EventShortDto {
+public class EventShortDto implements Comparable<EventShortDto> {
 
     private long id;
 
@@ -23,6 +24,7 @@ public class EventShortDto {
 
     CategoryResponseDto category;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 
     private UserShortResponseDto initiator;
@@ -32,4 +34,9 @@ public class EventShortDto {
     private boolean paid;
 
     private long views;
+
+    @Override
+    public int compareTo(EventShortDto o) {
+        return Long.compare(this.views, o.views);
+    }
 }
