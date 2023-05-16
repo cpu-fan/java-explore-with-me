@@ -5,13 +5,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import ru.practicum.ewm.model.category.Category;
-import ru.practicum.ewm.model.compilation.Compilation;
-import ru.practicum.ewm.model.request.ParticipationRequest;
 import ru.practicum.ewm.model.user.User;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Entity
 @Table(name = "events")
@@ -73,10 +70,4 @@ public class Event {
     @Column(nullable = false)
     @Enumerated(value = EnumType.STRING)
     private EventState state = EventState.PENDING;
-
-    @ManyToMany(mappedBy = "events")
-    private Set<Compilation> compilations;
-
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
-    private Set<ParticipationRequest> requests;
 }

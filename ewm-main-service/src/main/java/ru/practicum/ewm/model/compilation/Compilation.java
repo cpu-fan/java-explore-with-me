@@ -22,7 +22,7 @@ public class Compilation {
     @Column(nullable = false, length = 120)
     private String title;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "event_compilations",
             joinColumns = @JoinColumn(name = "compilation_id"),
