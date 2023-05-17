@@ -17,4 +17,6 @@ public interface CommentService {
     Collection<CommentResponseDto> getEventComments(long eventId, int from, int size);
 
     Comment getCommentEntity(long commentId);
+
+    boolean existsById(long commentId);
 }

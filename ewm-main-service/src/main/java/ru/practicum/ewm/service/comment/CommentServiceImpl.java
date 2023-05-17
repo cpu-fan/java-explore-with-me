@@ -2,6 +2,7 @@ package ru.practicum.ewm.service.comment;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.dto.comment.CommentRequestDto;
 import ru.practicum.ewm.dto.comment.CommentResponseDto;
@@ -17,6 +18,7 @@ import ru.practicum.ewm.service.event.EventService;
 import ru.practicum.ewm.service.user.UserService;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -68,12 +70,19 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public void deleteCommentAdmin(long commentId) {
-
+        if (existsById(commentId)) {
+            commentRepository.deleteById(commentId);
+            log.info("Комментарий commentId = {} удален администратором", commentId);
+        }
     }
 
     @Override
     public Collection<CommentResponseDto> getEventComments(long eventId, int from, int size) {
-        return null;
+        eventService.existById(eventId);
+        log.info("Запрошен список комментариев события eventId = {}", eventId);
+        return commentRepository.findByEventId(eventId, PageRequest.of(from / size, size)).stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -83,5 +92,15 @@ public class CommentServiceImpl implements CommentService {
             log.error(message);
             throw new NotFoundException(message);
         });
+    }
+
+    @Override
+    public boolean existsById(long commentId) {
+        if (!commentRepository.existsById(commentId)) {
+            String message = "Комментарий commentId = " + commentId + " не найден";
+            log.error(message);
+            throw new NotFoundException(message);
+        }
+        return true;
     }
 }
