@@ -1,3 +1,5 @@
+-- Пока просто закомментирую и оставлю эту строчку с drop, т.к. когда запуск не в docker,
+-- а локально, то без очистки бывают разные конфликты в тестах Postman.
 -- drop table if exists categories, event_compilations, compilations, users, events, requests cascade;
 
 create table if not exists users (

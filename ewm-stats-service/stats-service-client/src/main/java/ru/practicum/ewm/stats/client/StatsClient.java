@@ -1,7 +1,9 @@
 package ru.practicum.ewm.stats.client;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -12,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 
+@Service
 public class StatsClient {
 
     private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern(HitRequestDto.DATE_PATTERN);
@@ -20,7 +23,7 @@ public class StatsClient {
 
     private final WebClient webClient;
 
-    public StatsClient(String url) {
+    public StatsClient(@Value("${stats-server.url}") String url) {
         webClient = WebClient.create(url);
     }
 

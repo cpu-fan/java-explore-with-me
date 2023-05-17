@@ -18,6 +18,7 @@ import ru.practicum.ewm.model.event.Event;
 import ru.practicum.ewm.model.event.QEvent;
 import ru.practicum.ewm.model.user.User;
 import ru.practicum.ewm.repository.event.EventRepository;
+import ru.practicum.ewm.repository.request.ParticipationRequestRepository;
 import ru.practicum.ewm.service.category.CategoryService;
 import ru.practicum.ewm.service.stats.StatsService;
 import ru.practicum.ewm.service.user.UserService;
@@ -50,6 +51,8 @@ public class EventServiceImpl implements EventService {
     private final StatsService statsService;
 
     private final ParticipationRequestMapper participationReqMapper;
+
+    private final ParticipationRequestRepository requestRepository;
 
     @Override
     public EventResponseDto getEvent(long eventId) {
@@ -111,7 +114,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventResponseDto getUserEvent(long userId, long eventId) {
         Event event = getUserEventEntity(userId, eventId);
-        log.info("Запрошено событие eventId = {}, пользователя userId = {}", event, userId);
+        log.info("Запрошено событие eventId = {} пользователя userId = {}", event, userId);
         return getEventsResponseDto(List.of(event)).get(0);
     }
 
@@ -146,10 +149,11 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Collection<ParticipationRequestRespDto> getUserEventsRequests(long userId, long eventId) {
+        if (!eventRepository.existsByIdAndInitiatorId(eventId, userId)) {
+            throw new NotFoundException("Событие id = " + eventId + " не найдено");
+        }
         log.info("Запрошена информация о запросах на участие в событии eventId = {} пользователя userId = {}", eventId, userId);
-        return eventRepository.findByIdAndInitiatorId(eventId, userId)
-                .orElseThrow(() -> new NotFoundException("Событие id = " + eventId + " не найдено"))
-                .getRequests().stream()
+        return requestRepository.findByEventId(eventId).stream()
                 .map(participationReqMapper::toDto)
                 .collect(Collectors.toList());
     }
