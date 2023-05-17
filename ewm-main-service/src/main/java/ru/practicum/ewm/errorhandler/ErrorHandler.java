@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.ewm.errorhandler.exceptions.ConflictException;
 import ru.practicum.ewm.errorhandler.exceptions.DateTimeValidationException;
 import ru.practicum.ewm.errorhandler.exceptions.NotFoundException;
+import ru.practicum.ewm.errorhandler.exceptions.ValidationException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -93,6 +94,18 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleMissingServletRequestParameterException(final MissingServletRequestParameterException e) {
+        log.error("Валидация не пройдена: " + e);
+        return new ErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "Ошибка валидации",
+                e.getMessage(),
+                LocalDateTime.now().format(formatter)
+        );
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleValidationException(final ValidationException e) {
         log.error("Валидация не пройдена: " + e);
         return new ErrorResponse(
                 HttpStatus.BAD_REQUEST,
