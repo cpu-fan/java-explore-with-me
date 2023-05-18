@@ -53,4 +53,6 @@ public class EventResponseDto {
     private LocalDateTime publishedOn;
 
     private long views;
+
+    private long comments;
 }

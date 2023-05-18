@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import ru.practicum.ewm.dto.comment.CountEventComments;
 import ru.practicum.ewm.dto.event.*;
 import ru.practicum.ewm.dto.request.ParticipationRequestRespDto;
 import ru.practicum.ewm.errorhandler.exceptions.ConflictException;
@@ -17,6 +18,7 @@ import ru.practicum.ewm.model.category.Category;
 import ru.practicum.ewm.model.event.Event;
 import ru.practicum.ewm.model.event.QEvent;
 import ru.practicum.ewm.model.user.User;
+import ru.practicum.ewm.repository.comment.CommentRepository;
 import ru.practicum.ewm.repository.event.EventRepository;
 import ru.practicum.ewm.repository.request.ParticipationRequestRepository;
 import ru.practicum.ewm.service.category.CategoryService;
@@ -53,6 +55,8 @@ public class EventServiceImpl implements EventService {
     private final ParticipationRequestMapper participationReqMapper;
 
     private final ParticipationRequestRepository requestRepository;
+
+    private final CommentRepository commentRepository;
 
     @Override
     public EventResponseDto getEvent(long eventId) {
@@ -95,7 +99,7 @@ public class EventServiceImpl implements EventService {
 
         event = eventRepository.save(event);
         log.info("Добавлена новое событие: id = {}, title = {}", event.getId(), event.getTitle());
-        return mapper.toDto(event);
+        return mapper.toDto(event, 0);
     }
 
     @Override
@@ -142,7 +146,7 @@ public class EventServiceImpl implements EventService {
 
             event = eventRepository.save(event);
             log.info("Обновлена информация о событии eventId = {}", eventId);
-            return mapper.toDto(event);
+            return mapper.toDto(event, commentRepository.countByEventId(eventId));
         }
         throw new ConflictException("Текущий статус state = " + event.getState() + " не позволяет обновить событие");
     }
@@ -168,6 +172,16 @@ public class EventServiceImpl implements EventService {
     public Event getEventEntity(long eventId) {
         return eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие id = " + eventId + " не найдено"));
+    }
+
+    @Override
+    public boolean existById(long eventId) {
+        if (!eventRepository.existsById(eventId)) {
+            String message = "Событие id = " + eventId + " не найдено";
+            log.error(message);
+            throw new NotFoundException(message);
+        }
+        return true;
     }
 
     @Override
@@ -203,7 +217,7 @@ public class EventServiceImpl implements EventService {
             event = mapper.updateEventAdmin(eventDto, event);
             event = eventRepository.save(event);
             log.info("Обновлена информация о событии eventId = {}", eventId);
-            return mapper.toDto(event);
+            return mapper.toDto(event, commentRepository.countByEventId(eventId));
         }
         throw new ConflictException("Текущий статус state = " + event.getState() + " не позволяет обновить событие");
     }
@@ -253,18 +267,28 @@ public class EventServiceImpl implements EventService {
         if (!eventList.isEmpty()) {
 
             Map<Long, Long> stats = getStatMap(eventList);
+            Map<Long, Long> comments = getCommentsMap(eventList);
 
             if (stats != null && !stats.isEmpty()) {
 
                 return eventList.stream()
                         .map(event -> stats.containsKey(event.getId()) ?
-                                mapper.toShortDtoWithViews(event, stats.get(event.getId())) :
-                                mapper.toShortDto(event))
+                                mapper.toShortDtoWithViews(event, stats.get(event.getId()), comments.get(event.getId())) :
+                                mapper.toShortDto(event, comments.get(event.getId())))
+                        .collect(Collectors.toList());
+            }
+
+            if (comments != null && !comments.isEmpty()) {
+                return eventList.stream()
+                        .map(event -> comments.containsKey(event.getId()) ?
+                                mapper.toShortDto(event, comments.get(event.getId())) :
+                                mapper.toShortDto(event, 0))
                         .collect(Collectors.toList());
             }
         }
+
         return eventList.stream()
-                .map(mapper::toShortDto)
+                .map(event -> mapper.toShortDto(event, 0))
                 .collect(Collectors.toList());
     }
 
@@ -272,19 +296,28 @@ public class EventServiceImpl implements EventService {
         if (!eventList.isEmpty()) {
 
             Map<Long, Long> stats = getStatMap(eventList);
+            Map<Long, Long> comments = getCommentsMap(eventList);
 
             if (stats != null && !stats.isEmpty()) {
 
                 return eventList.stream()
                         .map(event -> stats.containsKey(event.getId()) ?
-                                mapper.toDtoWithViews(event, stats.get(event.getId())) :
-                                mapper.toDto(event))
+                                mapper.toDtoWithViews(event, stats.get(event.getId()), comments.get(event.getId())) :
+                                mapper.toDto(event, comments.get(event.getId())))
+                        .collect(Collectors.toList());
+            }
+
+            if (comments != null && !comments.isEmpty()) {
+                return eventList.stream()
+                        .map(event -> comments.containsKey(event.getId()) ?
+                                mapper.toDto(event, comments.get(event.getId())) :
+                                mapper.toDto(event, 0))
                         .collect(Collectors.toList());
             }
         }
 
         return eventList.stream()
-                .map(mapper::toDto)
+                .map(event -> mapper.toDto(event, 0))
                 .collect(Collectors.toList());
     }
 
@@ -301,5 +334,13 @@ public class EventServiceImpl implements EventService {
                 .collect(Collectors.toMap(hits -> Long.valueOf(hits.getUri()
                         .substring(hits.getUri().length() - 1)), HitResponseDto::getHits))
                 .block();
+    }
+
+    private Map<Long, Long> getCommentsMap(List<Event> events) {
+        List<Long> eventIds = events.stream()
+                .map(Event::getId)
+                .collect(Collectors.toList());
+        return commentRepository.countEventComments(eventIds).stream()
+                .collect(Collectors.toMap(CountEventComments::getEventId, CountEventComments::getCommentsCount));
     }
 }

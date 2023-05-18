@@ -35,6 +35,8 @@ public class EventShortDto implements Comparable<EventShortDto> {
 
     private long views;
 
+    private long comments;
+
     @Override
     public int compareTo(EventShortDto o) {
         return Long.compare(this.views, o.views);

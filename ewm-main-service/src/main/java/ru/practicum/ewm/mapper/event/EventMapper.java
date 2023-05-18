@@ -14,19 +14,19 @@ public interface EventMapper {
     @Mapping(source = "category", target = "category.id")
     Event toEntity(EventRequestDto eventRequestDto);
 
-    EventResponseDto toDto(Event event);
+    EventResponseDto toDto(Event event, long comments);
 
     @Mapping(source = "views", target = "views")
-    EventResponseDto toDtoWithViews(Event event, long views);
+    EventResponseDto toDtoWithViews(Event event, long views, long comments);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(source = "category", target = "category.id")
     Event updateEventAdmin(EventAdminRequestDto eventDto, @MappingTarget Event event);
 
-    EventShortDto toShortDto(Event event);
+    EventShortDto toShortDto(Event event, long comments);
 
     @Mapping(source = "views", target = "views")
-    EventShortDto toShortDtoWithViews(Event event, long views);
+    EventShortDto toShortDtoWithViews(Event event, long views, long comments);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(source = "category", target = "category.id")
