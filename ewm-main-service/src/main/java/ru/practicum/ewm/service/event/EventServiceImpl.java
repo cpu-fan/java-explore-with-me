@@ -302,8 +302,8 @@ public class EventServiceImpl implements EventService {
 
                 return eventList.stream()
                         .map(event -> stats.containsKey(event.getId()) ?
-                                mapper.toDtoWithViews(event, stats.get(event.getId()), comments.get(event.getId())) :
-                                mapper.toDto(event, comments.get(event.getId())))
+                                mapper.toDtoWithViews(event, stats.get(event.getId()), comments.getOrDefault(event.getId(), 0L)) :
+                                mapper.toDto(event, comments.getOrDefault(event.getId(), 0L)))
                         .collect(Collectors.toList());
             }
 
