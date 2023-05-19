@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.dto.comment.CommentRequestDto;
 import ru.practicum.ewm.dto.comment.CommentResponseDto;
 import ru.practicum.ewm.errorhandler.exceptions.NotFoundException;
@@ -36,6 +37,7 @@ public class CommentServiceImpl implements CommentService {
     // Комментарий может добавлять любой авторизованный пользователь любому событию,
     // необходимое условие - событие должно быть опубликовано.
     @Override
+    @Transactional
     public CommentResponseDto addComment(long userId, long eventId, CommentRequestDto commentDto) {
         User user = userService.getUserById(userId);
         Event event = eventService.getEventEntity(eventId);
@@ -54,6 +56,7 @@ public class CommentServiceImpl implements CommentService {
 
     // Удаление своего комментария
     @Override
+    @Transactional
     public void deleteCommentUser(long userId, long commentId) {
         Comment comment = getCommentEntity(commentId);
 
@@ -69,6 +72,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional
     public void deleteCommentAdmin(long commentId) {
         if (existsById(commentId)) {
             commentRepository.deleteById(commentId);
@@ -77,6 +81,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Collection<CommentResponseDto> getEventComments(long eventId, int from, int size) {
         eventService.existById(eventId);
         log.info("Запрошен список комментариев события eventId = {}", eventId);
@@ -86,6 +91,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Comment getCommentEntity(long commentId) {
         return commentRepository.findById(commentId).orElseThrow(() -> {
             String message = "Комментарий commentId = " + commentId + " не найден";

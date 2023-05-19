@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.dto.compilation.CompilationRequestDto;
 import ru.practicum.ewm.dto.compilation.CompilationResponseDto;
 import ru.practicum.ewm.dto.compilation.CompilationUpdateDto;
@@ -32,6 +33,7 @@ public class CompilationServiceImpl implements CompilationService {
     private final CompilationRepository compilationRepository;
 
     @Override
+    @Transactional
     public CompilationResponseDto addCompilation(CompilationRequestDto compilationDto) {
         Set<Event> events = eventService.getEventEntities(compilationDto.getEvents());
         Compilation compilation = mapper.toEntity(compilationDto, events);
@@ -41,6 +43,7 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CompilationResponseDto getCompilation(long compilationId) {
         Compilation compilation = getCompilationEntity(compilationId);
         log.info("Запрошена подборка событий id = {}", compilationId);
@@ -48,6 +51,7 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CompilationResponseDto> getCompilations(Boolean pinned, int from, int size) {
         List<CompilationResponseDto> compilations;
 
@@ -66,6 +70,7 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
+    @Transactional
     public CompilationResponseDto updateCompilation(long compilationId, CompilationUpdateDto compilationDto) {
         Compilation compilation = getCompilationEntity(compilationId);
 
@@ -81,6 +86,7 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
+    @Transactional
     public void deleteCompilation(long compilationId) {
         if (compilationRepository.existsById(compilationId)) {
             compilationRepository.deleteById(compilationId);
