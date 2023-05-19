@@ -12,8 +12,6 @@ import ru.practicum.ewm.model.user.User;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CommentMapper {
 
-//    @Mapping(source = "user", target = "user")
-//    @Mapping(source = "event", target = "event")
     @Mapping(target = "id", ignore = true)
     Comment toComment(CommentRequestDto commentDto, User user, Event event);
 
