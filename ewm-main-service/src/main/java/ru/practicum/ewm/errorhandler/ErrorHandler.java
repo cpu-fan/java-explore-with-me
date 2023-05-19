@@ -32,7 +32,7 @@ public class ErrorHandler {
             ConflictException.class
     })
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleDateTimeValidationException(final DateTimeValidationException e) {
+    public ErrorResponse handleDateTimeValidationException(final Exception e) {
         String reason = "Нарушение целостности данных";
         String message = e.getMessage();
         log.error("Нарушение целостности данных: ", e);
@@ -64,11 +64,10 @@ public class ErrorHandler {
     @ExceptionHandler({
             MissingServletRequestParameterException.class,
             HttpMessageNotReadableException.class,
-            MethodArgumentNotValidException.class,
             ValidationException.class
     })
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleMissingServletRequestParameterException(Exception e) {
+    public ErrorResponse handleMissingServletRequestParameterException(final Exception e) {
         String reason = "Ошибка валидации";
         String message = e.getMessage();
         log.error("Валидация не пройдена: " + e);
