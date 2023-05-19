@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.dto.user.UserRequestDto;
 import ru.practicum.ewm.dto.user.UserResponseDto;
 import ru.practicum.ewm.errorhandler.exceptions.NotFoundException;
@@ -26,6 +27,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper mapper;
 
     @Override
+    @Transactional(readOnly = true)
     public Collection<UserResponseDto> getUsers(Collection<Long> ids, int from, int size) {
         Pageable page = PageRequest.of(from / size, size);
         List<User> userList = ids != null
@@ -39,6 +41,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserResponseDto createUser(UserRequestDto userDto) {
         User user = mapper.toUser(userDto);
         user = userRepository.save(user);
@@ -47,6 +50,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUser(long id) {
         User user = getUserById(id);
         userRepository.deleteById(id);

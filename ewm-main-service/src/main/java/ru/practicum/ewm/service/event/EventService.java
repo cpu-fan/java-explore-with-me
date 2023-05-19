@@ -29,6 +29,8 @@ public interface EventService {
 
     Set<Event> getEventEntities(Collection<Long> eventIds);
 
+    boolean existById(long eventId);
+
     // Admin
     Collection<EventResponseDto> searchEventsAdmin(EventSearchFilters filters, int from, int size);
 

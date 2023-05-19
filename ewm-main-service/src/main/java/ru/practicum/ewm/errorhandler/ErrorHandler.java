@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.ewm.errorhandler.exceptions.ConflictException;
 import ru.practicum.ewm.errorhandler.exceptions.DateTimeValidationException;
 import ru.practicum.ewm.errorhandler.exceptions.NotFoundException;
+import ru.practicum.ewm.errorhandler.exceptions.ValidationException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -25,38 +26,20 @@ public class ErrorHandler {
 
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:ss:mm");
 
-    @ExceptionHandler
+    @ExceptionHandler({
+            DataIntegrityViolationException.class,
+            DateTimeValidationException.class,
+            ConflictException.class
+    })
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleEmailAlreadyExistsException(final DataIntegrityViolationException e) {
+    public ErrorResponse handleDateTimeValidationException(final Exception e) {
+        String reason = "Нарушение целостности данных";
+        String message = e.getMessage();
         log.error("Нарушение целостности данных: ", e);
         return new ErrorResponse(
                 HttpStatus.CONFLICT,
-                "Нарушение целостности данных",
-                e.getMessage(),
-                LocalDateTime.now().format(formatter)
-        );
-    }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleConflictException(final ConflictException e) {
-        log.error("Нарушение целостности данных: ", e);
-        return new ErrorResponse(
-                HttpStatus.CONFLICT,
-                "Для запрошенной операции условия не соблюдены",
-                e.getMessage(),
-                LocalDateTime.now().format(formatter)
-        );
-    }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleDateTimeValidationException(final DateTimeValidationException e) {
-        log.error("Ошибка валидации даты: ", e);
-        return new ErrorResponse(
-                HttpStatus.CONFLICT,
-                "Ошибка валидации даты",
-                e.getMessage(),
+                reason,
+                message,
                 LocalDateTime.now().format(formatter)
         );
     }
@@ -78,26 +61,20 @@ public class ErrorHandler {
         );
     }
 
-    @ExceptionHandler
+    @ExceptionHandler({
+            MissingServletRequestParameterException.class,
+            HttpMessageNotReadableException.class,
+            ValidationException.class
+    })
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleHttpMessageNotReadableException(final HttpMessageNotReadableException e) {
+    public ErrorResponse handleMissingServletRequestParameterException(final Exception e) {
+        String reason = "Ошибка валидации";
+        String message = e.getMessage();
         log.error("Валидация не пройдена: " + e);
         return new ErrorResponse(
                 HttpStatus.BAD_REQUEST,
-                "Ошибка валидации",
-                e.getMessage(),
-                LocalDateTime.now().format(formatter)
-        );
-    }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleMissingServletRequestParameterException(final MissingServletRequestParameterException e) {
-        log.error("Валидация не пройдена: " + e);
-        return new ErrorResponse(
-                HttpStatus.BAD_REQUEST,
-                "Ошибка валидации",
-                e.getMessage(),
+                reason,
+                message,
                 LocalDateTime.now().format(formatter)
         );
     }

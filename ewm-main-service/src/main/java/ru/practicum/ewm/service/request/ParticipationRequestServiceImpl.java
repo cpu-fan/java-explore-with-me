@@ -41,6 +41,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     private final ParticipationRequestMapper mapper;
 
     @Override
+    @Transactional(readOnly = true)
     public Collection<ParticipationRequestRespDto> getUserRequests(long userId) {
         userService.getUserById(userId);
         log.info("Запрошен список запросов на события от пользователя id = {}", userId);
@@ -51,6 +52,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     }
 
     @Override
+    @Transactional
     public ParticipationRequestRespDto addRequest(long userId, long eventId) {
         Event event = eventService.getEventEntity(eventId);
         User user = userService.getUserById(userId);
@@ -85,6 +87,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     }
 
     @Override
+    @Transactional
     public ParticipationRequestRespDto cancelRequest(long userId, long requestId) {
         userService.getUserById(userId);
 

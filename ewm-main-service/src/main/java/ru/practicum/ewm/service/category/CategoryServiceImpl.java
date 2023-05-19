@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.dto.category.CategoryRequestDto;
 import ru.practicum.ewm.dto.category.CategoryResponseDto;
 import ru.practicum.ewm.errorhandler.exceptions.ConflictException;
@@ -29,6 +30,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final EventRepository eventRepository;
 
     @Override
+    @Transactional
     public CategoryResponseDto addCategory(CategoryRequestDto categoryDto) {
         Category category = mapper.toCategory(categoryDto);
         category = categoryRepository.save(category);
@@ -37,6 +39,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public void deleteCategory(long categoryId) {
         Category category = getEntityCategory(categoryId);
         checkExistingEventsForCategory(categoryId);
@@ -45,6 +48,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public CategoryResponseDto updateCategory(long categoryId, CategoryRequestDto categoryDto) {
         Category category = getEntityCategory(categoryId);
         category = mapper.partialUpdate(categoryDto, category);
@@ -54,6 +58,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Collection<CategoryResponseDto> getCategories(int from, int size) {
         Pageable page = PageRequest.of(from / size, size);
         Collection<Category> categories = categoryRepository.findAll(page).getContent();
@@ -64,6 +69,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CategoryResponseDto getCategory(long categoryId) {
         Category category = getEntityCategory(categoryId);
         log.info("Запрошена категория: {}", category);
@@ -71,6 +77,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Category getEntityCategory(long categoryId) {
         return categoryRepository.findById(categoryId).orElseThrow(() -> {
             String message = "Категория id = " + categoryId + " не найдена";

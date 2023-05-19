@@ -7,6 +7,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.ewm.dto.comment.CountEventComments;
 import ru.practicum.ewm.dto.event.*;
 import ru.practicum.ewm.dto.request.ParticipationRequestRespDto;
 import ru.practicum.ewm.errorhandler.exceptions.ConflictException;
@@ -17,6 +19,7 @@ import ru.practicum.ewm.model.category.Category;
 import ru.practicum.ewm.model.event.Event;
 import ru.practicum.ewm.model.event.QEvent;
 import ru.practicum.ewm.model.user.User;
+import ru.practicum.ewm.repository.comment.CommentRepository;
 import ru.practicum.ewm.repository.event.EventRepository;
 import ru.practicum.ewm.repository.request.ParticipationRequestRepository;
 import ru.practicum.ewm.service.category.CategoryService;
@@ -54,7 +57,10 @@ public class EventServiceImpl implements EventService {
 
     private final ParticipationRequestRepository requestRepository;
 
+    private final CommentRepository commentRepository;
+
     @Override
+    @Transactional(readOnly = true)
     public EventResponseDto getEvent(long eventId) {
         Event event = getEventEntity(eventId);
         log.info("Запрошено событие eventId = {}, title = {}", eventId, event.getTitle());
@@ -62,6 +68,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Collection<EventShortDto> searchEventsPublic(EventSearchFilters filters, int from, int size) {
 
         if (filters.getOnlyAvailable() == null) {
@@ -85,6 +92,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public EventResponseDto addEvent(long userId, EventRequestDto eventDto) {
         Category category = categoryService.getEntityCategory(eventDto.getCategory());
         User user = userService.getUserById(userId);
@@ -95,10 +103,11 @@ public class EventServiceImpl implements EventService {
 
         event = eventRepository.save(event);
         log.info("Добавлена новое событие: id = {}, title = {}", event.getId(), event.getTitle());
-        return mapper.toDto(event);
+        return mapper.toDto(event, 0);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Collection<EventShortDto> getUserEvents(long userId, int from, int size) {
         userService.getUserById(userId);
 
@@ -112,6 +121,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EventResponseDto getUserEvent(long userId, long eventId) {
         Event event = getUserEventEntity(userId, eventId);
         log.info("Запрошено событие eventId = {} пользователя userId = {}", event, userId);
@@ -119,6 +129,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public EventResponseDto updateEvent(EventUpdateDto eventDto, long userId, long eventId) {
         Event event = getUserEventEntity(userId, eventId);
 
@@ -142,12 +153,13 @@ public class EventServiceImpl implements EventService {
 
             event = eventRepository.save(event);
             log.info("Обновлена информация о событии eventId = {}", eventId);
-            return mapper.toDto(event);
+            return mapper.toDto(event, commentRepository.countByEventId(eventId));
         }
         throw new ConflictException("Текущий статус state = " + event.getState() + " не позволяет обновить событие");
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Collection<ParticipationRequestRespDto> getUserEventsRequests(long userId, long eventId) {
         if (!eventRepository.existsByIdAndInitiatorId(eventId, userId)) {
             throw new NotFoundException("Событие id = " + eventId + " не найдено");
@@ -159,23 +171,37 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Event getUserEventEntity(long userId, long eventId) {
         return eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Событие id = " + eventId + " не найдено"));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Event getEventEntity(long eventId) {
         return eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие id = " + eventId + " не найдено"));
     }
 
     @Override
+    public boolean existById(long eventId) {
+        if (!eventRepository.existsById(eventId)) {
+            String message = "Событие id = " + eventId + " не найдено";
+            log.error(message);
+            throw new NotFoundException(message);
+        }
+        return true;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Set<Event> getEventEntities(Collection<Long> eventIds) {
         return eventRepository.findByIdIn(eventIds);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Collection<EventResponseDto> searchEventsAdmin(EventSearchFilters filters, int from, int size) {
         List<Event> events = eventRepository.findAll(queryBuilder(filters), PageRequest.of(from / size, size)).toList();
         log.info("Поиск событий администратором с параметрами запроса filters = {}", filters);
@@ -183,6 +209,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public EventResponseDto updateEventAdmin(long eventId, EventAdminRequestDto eventDto) {
         Event event = getEventEntity(eventId);
 
@@ -203,7 +230,7 @@ public class EventServiceImpl implements EventService {
             event = mapper.updateEventAdmin(eventDto, event);
             event = eventRepository.save(event);
             log.info("Обновлена информация о событии eventId = {}", eventId);
-            return mapper.toDto(event);
+            return mapper.toDto(event, commentRepository.countByEventId(eventId));
         }
         throw new ConflictException("Текущий статус state = " + event.getState() + " не позволяет обновить событие");
     }
@@ -253,18 +280,28 @@ public class EventServiceImpl implements EventService {
         if (!eventList.isEmpty()) {
 
             Map<Long, Long> stats = getStatMap(eventList);
+            Map<Long, Long> comments = getCommentsMap(eventList);
 
             if (stats != null && !stats.isEmpty()) {
 
                 return eventList.stream()
                         .map(event -> stats.containsKey(event.getId()) ?
-                                mapper.toShortDtoWithViews(event, stats.get(event.getId())) :
-                                mapper.toShortDto(event))
+                                mapper.toShortDtoWithViews(event, stats.get(event.getId()), comments.getOrDefault(event.getId(), 0L)) :
+                                mapper.toShortDto(event, comments.getOrDefault(event.getId(), 0L)))
+                        .collect(Collectors.toList());
+            }
+
+            if (comments != null && !comments.isEmpty()) {
+                return eventList.stream()
+                        .map(event -> comments.containsKey(event.getId()) ?
+                                mapper.toShortDto(event, comments.get(event.getId())) :
+                                mapper.toShortDto(event, 0))
                         .collect(Collectors.toList());
             }
         }
+
         return eventList.stream()
-                .map(mapper::toShortDto)
+                .map(event -> mapper.toShortDto(event, 0))
                 .collect(Collectors.toList());
     }
 
@@ -272,19 +309,28 @@ public class EventServiceImpl implements EventService {
         if (!eventList.isEmpty()) {
 
             Map<Long, Long> stats = getStatMap(eventList);
+            Map<Long, Long> comments = getCommentsMap(eventList);
 
             if (stats != null && !stats.isEmpty()) {
 
                 return eventList.stream()
                         .map(event -> stats.containsKey(event.getId()) ?
-                                mapper.toDtoWithViews(event, stats.get(event.getId())) :
-                                mapper.toDto(event))
+                                mapper.toDtoWithViews(event, stats.get(event.getId()), comments.getOrDefault(event.getId(), 0L)) :
+                                mapper.toDto(event, comments.getOrDefault(event.getId(), 0L)))
+                        .collect(Collectors.toList());
+            }
+
+            if (comments != null && !comments.isEmpty()) {
+                return eventList.stream()
+                        .map(event -> comments.containsKey(event.getId()) ?
+                                mapper.toDto(event, comments.get(event.getId())) :
+                                mapper.toDto(event, 0))
                         .collect(Collectors.toList());
             }
         }
 
         return eventList.stream()
-                .map(mapper::toDto)
+                .map(event -> mapper.toDto(event, 0))
                 .collect(Collectors.toList());
     }
 
@@ -301,5 +347,13 @@ public class EventServiceImpl implements EventService {
                 .collect(Collectors.toMap(hits -> Long.valueOf(hits.getUri()
                         .substring(hits.getUri().length() - 1)), HitResponseDto::getHits))
                 .block();
+    }
+
+    private Map<Long, Long> getCommentsMap(List<Event> events) {
+        List<Long> eventIds = events.stream()
+                .map(Event::getId)
+                .collect(Collectors.toList());
+        return commentRepository.countEventComments(eventIds).stream()
+                .collect(Collectors.toMap(CountEventComments::getEventId, CountEventComments::getCommentsCount));
     }
 }
